@@ -9,11 +9,21 @@ data Cell = E | X | O
 data Board = Board [Cell]
     deriving (Eq)
 
+cellChar :: Cell -> Char
+cellChar E = ' '
+cellChar X = 'X'
+cellChar O = 'O'
+
 instance Show Board where
-    show (Board cs) = unlines . map concat . chunksOf 3 . map show $ cs
+    show (Board cs) = unlines . reverse . chunksOf 3 . map cellChar $ cs
 
 emptyBoard :: Board
 emptyBoard = Board (replicate 9 E)
+
+setCell :: Cell -> Int -> Board -> Board
+setCell c i (Board cs) = 
+    let (l,(_:rs)) = splitAt i cs
+     in Board $ l ++ c:rs
 
 getMove :: IO (Maybe Int)
 getMove = do
@@ -27,6 +37,9 @@ extractMove [c] | isDigit c =
     x -> Just x
 extractMove _               = Nothing
 
+doMove :: Int -> Board -> Board
+doMove = setCell X
+
 runGame :: IO ()
 runGame = forever $ do
     print emptyBoard
@@ -34,4 +47,4 @@ runGame = forever $ do
     possibleMove <- getMove
     case possibleMove of
         Nothing -> putStrLn "Illegal move :("
-        Just m  -> putStrLn $ "Ok, I'll do " ++ show m
+        Just m  -> print $ doMove (m-1) emptyBoard
