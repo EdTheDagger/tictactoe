@@ -8,6 +8,12 @@ main = do
     unitTests <- testSpec "hSpecTests" hTestSpecs
     defaultMain $ testGroup "Tests" [unitTests]
 
+xInTheCenter :: Board
+xInTheCenter = Board [E, E, E, E, P X, E, E, E, E]
+
+putXInTheCenter :: Move
+putXInTheCenter = Move X 5
+
 hTestSpecs :: Spec
 hTestSpecs = 
   describe "Unit tests" $ do
@@ -25,3 +31,18 @@ hTestSpecs =
       extractMove "x" `shouldBe` Nothing
     it "extractMove reads 12" $
       extractMove "12" `shouldBe` Nothing
+
+    it "setCell X in the center" $
+      setCell (P X) 5 emptyBoard `shouldBe` xInTheCenter
+
+    it "place X in the center" $
+      doMove putXInTheCenter emptyBoard `shouldBe` xInTheCenter
+
+    it "getCell of 1 takes fist" $
+      getCell 1 (Board [P X, E, E, E, E, E, E, E, E]) `shouldBe` P X
+    it "isValidMove is True on empty boards" $
+      isValidMove putXInTheCenter emptyBoard `shouldBe` True
+    it "isValidMove is True on empty boards" $
+      isValidMove putXInTheCenter xInTheCenter `shouldBe` False
+    it "isValidMove is True on empty boards" $
+      isValidMove (Move O 5) xInTheCenter `shouldBe` False
