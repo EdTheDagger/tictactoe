@@ -1,16 +1,19 @@
 module TicTacToe where
 
-import Data.List.Split ( chunksOf )
+import Data.Maybe (isJust)
+import Data.List.Split (chunksOf)
+import Data.List (find, transpose)
 import Data.Char (digitToInt, isDigit)
 import Control.Monad (forever)
 
 type Pos = Int
+type Player = Piece
 
 data Piece = X | O
     deriving (Show, Eq)
 data Cell = E | P Piece  -- E, P X, P O
     deriving (Show, Eq)
-data Move = Move Piece Pos
+data Move = Move Player Pos
 data Board = Board [Cell]
     deriving (Eq)
 
@@ -65,18 +68,41 @@ isValidMove (Move piece pos) board = getCell pos board == E
 runGame :: IO ()
 runGame = gameStep X emptyBoard
 
-gameStep :: Piece -> Board -> IO ()
+-- [123456789] -> [147258369]
+-- [[123],[456],[789]] -> [[147],[258],[369]]
+
+
+findWinner :: Board -> Maybe Player
+findWinner (Board cs) = 
+    let chunks = chunksOf 3 cs
+        diagonals = [map (cs!!) [0,4,8], map (cs!!) [2,4,6]]
+     in extractFirstJust $ map getSame $ chunks ++ transpose chunks ++ diagonals
+  where
+    getSame :: [Cell] -> Maybe Player
+    getSame [P x, P y, P z] | x == y && x == z = Just x
+    getSame _                                  = Nothing
+
+    extractFirstJust :: [Maybe a] -> Maybe a
+    extractFirstJust [] = Nothing
+    extractFirstJust (Just x:_) = Just x
+    extractFirstJust (_:rest) = extractFirstJust rest
+
+gameStep :: Player -> Board -> IO ()
 gameStep currentPlayer board = do
     print board
-    putStrLn "Enter your move"
-    input <- getInput
 
-    case input of
-        IInvalid -> do
-            putStrLn "Illegal move :("
-            gameStep currentPlayer board
-        ICmd Exit -> putStrLn "Goodbye :)"
-        IPos pos -> performPossibleMove (Move currentPlayer pos) board 
+    case findWinner board of
+        Just winner -> putStrLn $ show winner ++ " won the game! :)"
+        Nothing -> do
+            putStrLn "Enter your move"
+            input <- getInput
+
+            case input of
+                IInvalid -> do
+                    putStrLn "Illegal move :("
+                    gameStep currentPlayer board
+                ICmd Exit -> putStrLn "Goodbye :)"
+                IPos pos -> performPossibleMove (Move currentPlayer pos) board 
   where
     performPossibleMove :: Move -> Board -> IO ()
     performPossibleMove move board | isValidMove move board = do
