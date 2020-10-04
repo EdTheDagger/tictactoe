@@ -12,7 +12,7 @@ type Player = Piece
 data Piece = X | O
     deriving (Show, Eq)
 data Cell = E | P Piece  -- E, P X, P O
-    deriving (Show, Eq)
+    deriving (Eq)
 data Move = Move Player Pos
 data Board = Board [Cell]
     deriving (Eq)
@@ -22,13 +22,13 @@ data Command = Exit
 data Input = ICmd Command | IPos Pos | IInvalid
     deriving (Show, Eq)
 
-cellChar :: Cell -> Char
-cellChar E = ' '
-cellChar (P X) = 'X'
-cellChar (P O) = 'O'
+instance Show Cell where
+    show E = "  "
+    show (P X) = "❌"
+    show (P O) = "⭕️"
 
 instance Show Board where
-    show (Board cs) = unlines . reverse . chunksOf 3 . map cellChar $ cs
+    show (Board cs) = unlines . map concat . reverse . map (map show) . chunksOf 3 $ cs
 
 emptyBoard :: Board
 emptyBoard = Board (replicate 9 E)
