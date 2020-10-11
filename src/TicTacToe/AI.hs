@@ -2,7 +2,7 @@ module TicTacToe.AI where
 
 import TicTacToe.Types
 
-data AI = AI { makeMove :: GameState -> Move }
+data AI = AI { aiMove :: GameState -> Move }
 
 possibleMoves :: GameState -> [Move]
 possibleMoves (GameState (Board cs) currentPlayer) = 

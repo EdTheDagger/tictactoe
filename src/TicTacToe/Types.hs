@@ -19,6 +19,7 @@ data GameResult
         | EndedWithoutWinner
     deriving (Show, Eq)
 data GameState = GameState { getBoard :: Board, getCurrentPlayer :: Player }
+    deriving (Show, Eq)
 
 data Command = Exit
     deriving (Show, Eq)

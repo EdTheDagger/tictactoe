@@ -5,7 +5,7 @@ import Data.List.Split (chunksOf)
 import Data.Char (digitToInt, isDigit)
 
 import TicTacToe.Types
-import TicTacToe.AI (AI, trivialAi)
+import TicTacToe.AI (AI, trivialAi, aiMove)
 
 emptyBoard :: Board
 emptyBoard = Board (replicate 9 E)
@@ -36,9 +36,6 @@ extractPos c | isDigit c =
     x -> Just x
 extractPos _               = Nothing
 
-doMove :: Move -> Board -> Board
-doMove (Move piece pos) = setCell (P piece) pos
-
 isValidMove :: Move -> Board -> Bool
 isValidMove (Move _ pos) board = getCell pos board == E
 
@@ -64,29 +61,53 @@ gameResult (Board cs) =
     extractWinner (Just x:_) = Just x
     extractWinner (_:rest) = extractWinner rest
 
+
+performMove :: GameState -> Move -> Maybe GameState
+performMove (GameState board currentPlayer) move@(Move movePlayer pos)
+  | currentPlayer /= movePlayer  = Nothing
+  | pos < 1 || pos > 9           = Nothing
+  | not (isValidMove move board) = Nothing
+  | otherwise = 
+      Just $ GameState (doMove move board) newPlayer
+        where
+            doMove :: Move -> Board -> Board
+            doMove (Move piece pos) = setCell (P piece) pos
+
+            newPlayer = if currentPlayer == X then O else X
+
 gameStep :: GameState -> IO ()
-gameStep (GameState board currentPlayer) = do
-    print board
-
+gameStep gs@(GameState board currentPlayer) = do
     case gameResult board of
-        PlayerWon winner -> putStrLn $ show winner ++ " won the game! :)"
-        EndedWithoutWinner -> putStrLn $ "Game has finished without winner :/"
-        InProgress -> do
-            putStrLn "Enter your move"
-            input <- getInput
+        PlayerWon winner -> print board >> (putStrLn $ show winner ++ " won the game! :)")
+        EndedWithoutWinner -> print board >> (putStrLn $ "Game has finished without winner :/")
+        InProgress -> 
+            if currentPlayer == X then do
+                mMove <- playerMove gs
+                case mMove of
+                    Nothing   -> putStrLn "Goodbye :)"   -- Exit game
+                    Just move -> 
+                        case performMove gs move of
+                            Just newGameState -> gameStep newGameState
+                            Nothing           -> putStrLn "Illegal move :(" >> gameStep gs
+            else do
+                let move = aiMove trivialAi gs
+                case performMove gs move of
+                    Just newGameState -> gameStep newGameState
+                    Nothing           -> putStrLn "AI performed an invalid move!" -- End game
 
-            case input of
-                IInvalid -> do
-                    putStrLn "Illegal move :("
-                    gameStep (GameState board currentPlayer)
-                ICmd Exit -> putStrLn "Goodbye :)"
-                IPos pos -> performPossibleMove (Move currentPlayer pos) board 
   where
-    performPossibleMove :: Move -> Board -> IO ()
-    performPossibleMove move board | isValidMove move board = do
-        let newBoard = doMove move board
-        let newPlayer = if currentPlayer == X then O else X
-        gameStep (GameState newBoard newPlayer)
-    performPossibleMove _ board = do
-        putStrLn "Invalid move :("
-        gameStep (GameState board currentPlayer)
+    playerMove :: GameState -> IO (Maybe Move)
+    playerMove gs@(GameState board currentPlayer) = do
+        print board
+
+        putStrLn "Enter your move"
+        input <- getInput
+
+        case input of
+            IInvalid -> do
+                putStrLn "Illegal move :("
+                playerMove gs
+            ICmd Exit -> 
+                pure Nothing
+            IPos pos ->
+                pure . Just $ Move currentPlayer pos
