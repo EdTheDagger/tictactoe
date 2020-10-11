@@ -1,10 +1,8 @@
 module TicTacToe where
 
-import Data.Maybe (isJust)
+import Data.List (transpose)
 import Data.List.Split (chunksOf)
-import Data.List (find, transpose)
 import Data.Char (digitToInt, isDigit)
-import Control.Monad (forever)
 
 type Pos = Int
 type Player = Piece
@@ -16,6 +14,11 @@ data Cell = E | P Piece  -- E, P X, P O
 data Move = Move Player Pos
 data Board = Board [Cell]
     deriving (Eq)
+data BoardState 
+        = PlayerWon Player
+        | InProgress
+        | EndedWithoutWinner
+    deriving (Show, Eq)
 
 data Command = Exit
     deriving (Show, Eq)
@@ -43,17 +46,17 @@ getCell i (Board cs) = cs !! (i-1)
 
 getInput :: IO Input
 getInput = do
-    line <- getLine
-    return $ case extractPos line of
+    char <- getChar
+    return $ case extractPos char of
         Just validPos -> IPos validPos
         Nothing       -> 
-            if line == "q" then
+            if char == 'q' then
                 ICmd Exit
             else
                 IInvalid
 
-extractPos :: String -> Maybe Int
-extractPos [c] | isDigit c = 
+extractPos :: Char -> Maybe Int
+extractPos c | isDigit c = 
   case digitToInt c of
     0 -> Nothing
     x -> Just x
@@ -63,37 +66,38 @@ doMove :: Move -> Board -> Board
 doMove (Move piece pos) = setCell (P piece) pos
 
 isValidMove :: Move -> Board -> Bool
-isValidMove (Move piece pos) board = getCell pos board == E
+isValidMove (Move _ pos) board = getCell pos board == E
 
 runGame :: IO ()
 runGame = gameStep X emptyBoard
 
--- [123456789] -> [147258369]
--- [[123],[456],[789]] -> [[147],[258],[369]]
-
-
-findWinner :: Board -> Maybe Player
-findWinner (Board cs) = 
+boardState :: Board -> BoardState
+boardState (Board cs) = 
     let chunks = chunksOf 3 cs
+        hasEmptyCell = any (==E) cs
         diagonals = [map (cs!!) [0,4,8], map (cs!!) [2,4,6]]
-     in extractFirstJust $ map getSame $ chunks ++ transpose chunks ++ diagonals
+        winner = extractWinner $ map getSame $ chunks ++ transpose chunks ++ diagonals
+     in case winner of
+          Just p  -> PlayerWon p
+          Nothing -> if hasEmptyCell then InProgress else EndedWithoutWinner
   where
     getSame :: [Cell] -> Maybe Player
     getSame [P x, P y, P z] | x == y && x == z = Just x
     getSame _                                  = Nothing
 
-    extractFirstJust :: [Maybe a] -> Maybe a
-    extractFirstJust [] = Nothing
-    extractFirstJust (Just x:_) = Just x
-    extractFirstJust (_:rest) = extractFirstJust rest
+    extractWinner :: [Maybe a] -> Maybe a
+    extractWinner [] = Nothing
+    extractWinner (Just x:_) = Just x
+    extractWinner (_:rest) = extractWinner rest
 
 gameStep :: Player -> Board -> IO ()
 gameStep currentPlayer board = do
     print board
 
-    case findWinner board of
-        Just winner -> putStrLn $ show winner ++ " won the game! :)"
-        Nothing -> do
+    case boardState board of
+        PlayerWon winner -> putStrLn $ show winner ++ " won the game! :)"
+        EndedWithoutWinner -> putStrLn $ "Game has finished without winner :/"
+        InProgress -> do
             putStrLn "Enter your move"
             input <- getInput
 
