@@ -1,6 +1,7 @@
 import Test.Tasty
 import Test.Tasty.Hspec
 
+import TicTacToe.Types
 import TicTacToe.Core
 import TicTacToe.AI
 
