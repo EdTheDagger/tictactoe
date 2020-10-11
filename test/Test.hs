@@ -1,12 +1,14 @@
 import Test.Tasty
 import Test.Tasty.Hspec
 
-import TicTacToe
+import TicTacToe.Core
+import TicTacToe.AI
 
 main :: IO ()
 main = do
-    unitTests <- testSpec "hSpecTests" hTestSpecs
-    defaultMain $ testGroup "Tests" [unitTests]
+    unitTests <- testSpec "hCoreTestSpecs" hCoreTestSpecs
+    aiTests <- testSpec "hAiTestSpecs" hAiTestSpecs
+    defaultMain $ testGroup "Tests" [unitTests, aiTests]
 
 xInTheCenter :: Board
 xInTheCenter = Board [E, E, E, E, P X, E, E, E, E]
@@ -14,8 +16,8 @@ xInTheCenter = Board [E, E, E, E, P X, E, E, E, E]
 putXInTheCenter :: Move
 putXInTheCenter = Move X 5
 
-hTestSpecs :: Spec
-hTestSpecs = 
+hCoreTestSpecs :: Spec
+hCoreTestSpecs =
   describe "Unit tests" $ do
     it "extractPos reads 0" $
       extractPos '0' `shouldBe` Nothing
@@ -45,17 +47,26 @@ hTestSpecs =
     it "isValidMove is True on empty boards" $
       isValidMove (Move O 5) xInTheCenter `shouldBe` False
     
-    it "boardState does not find winners that are losers" $
-      boardState (Board [E, E, P X, P O, P X, P O, P O, E, E]) `shouldBe` InProgress
-    it "boardState in rows" $
-      boardState (Board [E, E, P X, P O, P O, P O, P O, E, E]) `shouldBe` PlayerWon O
-    it "boardState in cols" $
-      boardState (Board [P O, E, E, P O, P X, P X, P O, P X, E]) `shouldBe` PlayerWon O
-    it "boardState in diagonal 1" $
-      boardState (Board [P O, E, E, E, P O, P X, E, P X, P O]) `shouldBe` PlayerWon O
-    it "boardState in diagonal 2" $
-      boardState (Board [P X, E, P O, E, P O, P X, P O, P X, E]) `shouldBe` PlayerWon O
-    it "boardState find end" $
-      boardState (Board [P X, P O, P X, P X, P O, P X, P X, P X, P O]) `shouldBe` PlayerWon X
-    it "boardState find end" $
-      boardState (Board [P X, P O, P X, P O, P O, P X, P X, P X, P O]) `shouldBe` EndedWithoutWinner
+    it "gameResult does not find winners that are losers" $
+      gameResult (Board [E, E, P X, P O, P X, P O, P O, E, E]) `shouldBe` InProgress
+    it "gameResult in rows" $
+      gameResult (Board [E, E, P X, P O, P O, P O, P O, E, E]) `shouldBe` PlayerWon O
+    it "gameResult in cols" $
+      gameResult (Board [P O, E, E, P O, P X, P X, P O, P X, E]) `shouldBe` PlayerWon O
+    it "gameResult in diagonal 1" $
+      gameResult (Board [P O, E, E, E, P O, P X, E, P X, P O]) `shouldBe` PlayerWon O
+    it "gameResult in diagonal 2" $
+      gameResult (Board [P X, E, P O, E, P O, P X, P O, P X, E]) `shouldBe` PlayerWon O
+    it "gameResult find end" $
+      gameResult (Board [P X, P O, P X, P X, P O, P X, P X, P X, P O]) `shouldBe` PlayerWon X
+    it "gameResult find end" $
+      gameResult (Board [P X, P O, P X, P O, P O, P X, P X, P X, P O]) `shouldBe` EndedWithoutWinner
+
+hAiTestSpecs :: Spec
+hAiTestSpecs =
+  describe "Unit tests" $ do
+    describe "PossibleMoves" $ do
+      it "For empty board, all moves are possible" $ do
+        possibleMoves (GameState emptyBoard X) `shouldBe` [Move X pos | pos <- [1..9]]
+
+
