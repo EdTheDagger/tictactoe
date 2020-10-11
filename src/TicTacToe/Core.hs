@@ -5,7 +5,6 @@ import Data.List.Split (chunksOf)
 import Data.Char (digitToInt, isDigit)
 
 import TicTacToe.Types
-import TicTacToe.AI (AI, trivialAi, aiMove)
 
 emptyBoard :: Board
 emptyBoard = Board (replicate 9 E)

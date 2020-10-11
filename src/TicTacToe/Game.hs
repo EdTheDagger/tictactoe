@@ -22,7 +22,7 @@ gameStep gs@(GameState board currentPlayer) = do
                             Just newGameState -> gameStep newGameState
                             Nothing           -> putStrLn "Illegal move :(" >> gameStep gs
             else do
-                let move = aiMove trivialAi gs
+                let move = aiMove oneMoveAi gs
                 case performMove gs move of
                     Just newGameState -> gameStep newGameState
                     Nothing           -> putStrLn "AI performed an invalid move!" -- End game
