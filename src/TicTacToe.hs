@@ -1,6 +1,6 @@
 module TicTacToe 
-    ( runGame
+    ( module TicTacToe.Game
     )
     where
 
-import TicTacToe.Core (runGame)
+import TicTacToe.Game
